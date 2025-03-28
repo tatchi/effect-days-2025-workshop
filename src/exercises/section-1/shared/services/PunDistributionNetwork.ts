@@ -1,4 +1,4 @@
-import { Array, Context, Effect, Layer, Random } from "effect"
+import { Array, Context, Effect, Layer, Option, Random } from "effect"
 import { NoChannelAvailableError } from "../domain/errors.js"
 import type { ChannelType, Misbehavior, Pun } from "../domain/models.js"
 import { Channel } from "../domain/models.js"
@@ -18,6 +18,31 @@ export const makePunDistributionNetwork = Effect.gen(function*() {
     channels.set(channel.type, channel)
   }
 
+  // const getChannel = Effect.fn("PunDistributionNetwork.getChannel")(
+  //   function*(misbehavior: Misbehavior) {
+  //     yield* Effect.log(`Detected new misbehavior for child: ${misbehavior.childName}`).pipe(
+  //       Effect.annotateLogs({ ...misbehavior })
+  //     )
+  //     return yield* Effect.filter(channels.values(), (channel) => channel.isAvailable).pipe(
+  //       Effect.map(Array.sort(Channel.OrderReceptivityDesc)),
+  //       Effect.filterOrFail(
+  //         (channels): channels is Array.NonEmptyArray<Channel> => Array.isNonEmptyArray(channels),
+  //         () => new NoChannelAvailableError({ category: misbehavior.category })
+  //       ),
+  //       Effect.andThen((channels) =>
+  //         // Select the channel based on channel receptivity / pun severity
+  //         misbehavior.severity >= 4
+  //           // For puns with a high severity, select the available channel with
+  //           // the highest receptivity
+  //           ? Effect.succeed(Array.headNonEmpty(channels))
+  //           // Otherwise select a random channel
+  //           : Random.choice(channels)
+  //       ),
+  //       Effect.tap((channel) => Effect.log(`Selected channel type "${channel.type}" for optimal pun delivery`))
+  //     )
+  //   }
+  // )
+
   const getChannel = Effect.fn("PunDistributionNetwork.getChannel")(
     function*(misbehavior: Misbehavior) {
       yield* Effect.log(`Detected new misbehavior for child: ${misbehavior.childName}`).pipe(
@@ -25,10 +50,14 @@ export const makePunDistributionNetwork = Effect.gen(function*() {
       )
       return yield* Effect.filter(channels.values(), (channel) => channel.isAvailable).pipe(
         Effect.map(Array.sort(Channel.OrderReceptivityDesc)),
-        Effect.filterOrFail(
-          (channels): channels is Array.NonEmptyArray<Channel> => Array.isNonEmptyArray(channels),
-          () => new NoChannelAvailableError({ category: misbehavior.category })
-        ),
+        // Effect.filterOrFail(
+        //   (channels): channels is Array.NonEmptyArray<Channel> => Array.isNonEmptyArray(channels),
+        //   () => new NoChannelAvailableError({ category: misbehavior.category })
+        // ),
+        Effect.andThen(Array.match({
+          onEmpty: () => Effect.fail(new NoChannelAvailableError({ category: misbehavior.category })),
+          onNonEmpty: Effect.succeed
+        })),
         Effect.andThen((channels) =>
           // Select the channel based on channel receptivity / pun severity
           misbehavior.severity >= 4

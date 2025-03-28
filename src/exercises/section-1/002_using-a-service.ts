@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import { Array, Effect, Match } from "effect"
 
 // A pre-defined list of misbehaviors
 import { misbehaviors } from "./fixtures/Misbehaviors.js"
@@ -34,5 +34,50 @@ import { PunsterClient } from "./shared/services/PunsterClient.js"
  */
 
 export const main = Effect.gen(function*() {
-  // Your logic goes here
+  const punster = yield* PunsterClient
+  const pdn = yield* PunDistributionNetwork
+
+  return yield* Effect.forEach(
+    misbehaviors,
+    Effect.fn(function*(misbehavior) {
+      const channel = yield* pdn.getChannel(misbehavior)
+      yield* punster.createPun(misbehavior).pipe(
+        Effect.andThen((pun) => pdn.deliverPun(pun, misbehavior, channel)),
+        Effect.andThen((report) => Effect.log(report)),
+        Effect.catchTags({
+          ChildImmuneError: () =>
+            Effect.logWarning(
+              `Child ${misbehavior.childName} is immune, using immunity token`
+            ),
+          PunsterFetchError: () =>
+            Effect.logError(
+              `Failed to fetch pun for misbehavior: ${misbehavior}`
+            )
+        })
+      )
+    })
+  )
+
+  // return yield* Effect.all(
+  //   Array.map(
+  //     misbehaviors,
+  //     Effect.fn(function*(misbehavior) {
+  //       const channel = yield* pdn.getChannel(misbehavior)
+  //       yield* punster.createPun(misbehavior).pipe(
+  //         Effect.andThen((pun) => pdn.deliverPun(pun, misbehavior, channel)),
+  //         Effect.andThen((report) => Effect.log(report)),
+  //         Effect.catchTags({
+  //           ChildImmuneError: () =>
+  //             Effect.logWarning(
+  //               `Child ${misbehavior.childName} is immune, using immunity token`
+  //             ),
+  //           PunsterFetchError: () =>
+  //             Effect.logError(
+  //               `Failed to fetch pun for misbehavior: ${misbehavior}`
+  //             )
+  //         })
+  //       )
+  //     })
+  //   )
+  // )
 })

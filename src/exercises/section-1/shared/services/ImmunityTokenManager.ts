@@ -1,4 +1,5 @@
 import { Context, Effect, Layer, Schedule } from "effect"
+import type { NoSuchElementException } from "effect/Cause"
 import { NoTokenAvailableError } from "../domain/errors.js"
 
 export class ImmunityTokenManager extends Context.Tag("ImmunityTokenManager")<ImmunityTokenManager, {
@@ -28,7 +29,8 @@ export const makeImmunityTokenManager = Effect.gen(function*() {
   const awardToken = Effect.fn("ImmunityTokenManager.awardToken")(
     function*(childName: string, options: { readonly reason: string }) {
       yield* Effect.log(`Awarding immunity token to ${childName} because ${options.reason}`)
-      const previous = tokens.get(childName) ?? 0
+      // const previous = tokens.get(childName) ?? 0
+      const previous = yield* getBalance(childName)
       tokens.set(childName, previous + 1)
     }
   )
@@ -41,7 +43,7 @@ export const makeImmunityTokenManager = Effect.gen(function*() {
           tokens.set(childName, amount)
           return amount
         }),
-        Effect.mapError(() => new NoTokenAvailableError({ childName }))
+        Effect.mapError((_: NoSuchElementException) => new NoTokenAvailableError({ childName }))
       )
     }
   )
