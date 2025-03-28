@@ -1,4 +1,4 @@
-import type { Effect } from "effect"
+import { Context, type Effect } from "effect"
 
 // The "./shared/domain/*.js" imports provide domain-specific types and errors
 // used across the Pun-ishment Protocol application. They are imported from a
@@ -35,6 +35,11 @@ export interface PunsterClientShape {
   ) => Effect.Effect<string, PunsterFetchError>
 }
 
+export class PunsterClient extends Context.Tag("exercises/Punsterclient")<
+  PunsterClient,
+  PunsterClientShape
+>() {}
+
 /**
  * The Pun Distribution Network (PDN) is responsible for controlling access to
  * the most optimal communication channels for delivering puns.
@@ -43,6 +48,11 @@ export interface PunDistributionNetworkShape {
   readonly getChannel: (misbehavior: Misbehavior) => Effect.Effect<Channel, NoChannelAvailableError>
   readonly deliverPun: (pun: Pun, misbehavior: Misbehavior, channel: Channel) => Effect.Effect<string>
 }
+
+export class PunDistributionNetwork extends Context.Tag("exercises/PunDistributionNetwork")<
+  PunDistributionNetwork,
+  PunDistributionNetworkShape
+>() {}
 
 /**
  * The Immunity Token Manager is a service that allows children to earn pun
@@ -54,3 +64,8 @@ export interface ImmunityTokenManagerShape {
   readonly awardToken: (childName: string, options: { readonly reason: string }) => Effect.Effect<void>
   readonly useToken: (childName: string) => Effect.Effect<number, NoTokenAvailableError>
 }
+
+export class ImmunityTokenManager extends Context.Tag("exercises/ImmunityTokenManager")<
+  ImmunityTokenManager,
+  ImmunityTokenManagerShape
+>() {}
