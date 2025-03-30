@@ -54,6 +54,7 @@ import {
   Pun,
   PunDeliveryReport,
 } from "./shared/domain/models.js"
+import { NodeHttpClient } from "@effect/platform-node"
 /* eslint-enable */
 
 function makeImmunityTokenManager() {
@@ -215,3 +216,17 @@ function makePunsterClient() {
     } as const
   })
 }
+
+class ImmunityTokenManager extends Effect.Service<ImmunityTokenManager>()("exercises/ImmunityTokenManager", {
+  scoped: makeImmunityTokenManager()
+}) {}
+
+class PunsterClient extends Effect.Service<PunsterClient>()("exercises/PunsterClient", {
+  effect: makePunsterClient(),
+  dependencies: [ImmunityTokenManager.Default, NodeHttpClient.layerUndici]
+}) {}
+
+class PunDistributionNetwork extends Effect.Service<PunDistributionNetwork>()("exercises/PunDistributionNetwork", {
+  effect: makePunDistributionNetwork(),
+  dependencies: [PunsterClient.Default]
+}) {}
