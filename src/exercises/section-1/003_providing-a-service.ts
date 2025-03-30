@@ -30,4 +30,10 @@ export const main = Effect.gen(function*() {
     description: "A test misbehavior",
     severity: 1
   }))
-})
+}).pipe(Effect.provideService(
+  PunsterClient,
+  PunsterClient.of({
+    createPun: () => Effect.succeed(testPun),
+    evaluatePun: () => Effect.succeed(testEvaluation)
+  })
+))
