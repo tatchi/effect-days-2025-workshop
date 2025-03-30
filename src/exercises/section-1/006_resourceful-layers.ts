@@ -1,3 +1,4 @@
+import { NodeHttpClient } from "@effect/platform-node"
 import { Layer } from "effect"
 import { ImmunityTokenManager, makeImmunityTokenManager } from "./shared/services/ImmunityTokenManager.js"
 import { makePunDistributionNetwork, PunDistributionNetwork } from "./shared/services/PunDistributionNetwork.js"
@@ -28,7 +29,7 @@ import { makePunsterClient, PunsterClient } from "./shared/services/PunsterClien
  *     - Provide some mechanism of error handling for `Layer` errors
  */
 
-export const ImmunityTokenManagerLayer = Layer.effect(
+export const ImmunityTokenManagerLayer = Layer.scoped(
   ImmunityTokenManager,
   makeImmunityTokenManager
 )
@@ -47,4 +48,4 @@ export const MainLayer = Layer.mergeAll(
   ImmunityTokenManagerLayer,
   PunsterClientLayer,
   PunDistributionNetworkLayer
-)
+).pipe(Layer.provide(NodeHttpClient.layerUndici))
